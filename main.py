@@ -1,4 +1,4 @@
-from dash import Dash, dcc, html, Input, Output, callback
+from dash import Dash, dcc, html, Input, Output
 import plotly.express as px
 import pandas as pd
 
@@ -14,15 +14,9 @@ service_types = df['Тип услуги'].unique()
 # Определяем структуру и стиль приложения
 app = Dash(__name__, external_stylesheets=external_stylesheets)
 
-# Изменяем цветовую схему для темы ремонта машин
-colors = {
-    'background': '#f2f2f2',
-    'text': '#2c3e50'
-}
-
-app.layout = html.Div(style={'backgroundColor': colors['background']}, children=[
+app.layout = html.Div([
     # Заголовок приложения
-    html.H1('Автосервис Analytics', style={'text-align': 'center', 'color': colors['text']}),
+    html.H1('Приложение автосервиса', style={'text-align': 'center', 'color': '#2c3e50'}),
 
     # Первый блок: Круговая диаграмма и гистограмма с ползунком
     html.Div([
@@ -38,34 +32,14 @@ app.layout = html.Div(style={'backgroundColor': colors['background']}, children=
                 clearable=False,
                 style={'width': '80%', 'margin': '0 auto'}
             ),
-            # График временного ряда (линейный график) для отображения динамики доходов и расходов
-            dcc.Graph(
-                id='time-series',
-                figure=px.line(df, x='Дата', y='Общая стоимость (руб)', title='Динамика доходов и расходов')
-            ),
             # Круговая диаграмма
-            dcc.Graph(
-                id='expenses-pie-chart',
-                figure=px.pie(df, names='Тип работ', title='Структура расходов по категориям')
-            ),
+            dcc.Graph(id="piegraph"),
         ], className='six columns'),  # Половина ширины строки
 
         # Правая часть блока
         html.Div([
             # Заголовок блока
             html.H4('Распределение стоимости услуг:', style={'color': '#2c3e50'}),
-            # Гистограмма для анализа прибыли и ее распределения
-            dcc.Graph(
-                id='profit-histogram',
-                figure=px.histogram(df, x='Общая стоимость (руб)', title='Анализ прибыли и ее распределения')
-            ),
-            # Таблица с данными для отображения ключевых финансовых показателей
-            dcc.Table(
-                id='financial-table',
-                columns=[{'name': col, 'id': col} for col in df.columns],
-                data=df.to_dict('records'),
-                style_table={'maxHeight': '300px', 'overflowY': 'scroll', 'backgroundColor': colors['background']}
-            ),
             # Гистограмма с ползунком для распределения стоимости услуг
             dcc.Graph(id='graph-with-slider'),
             # Ползунок для выбора типа услуги
@@ -81,65 +55,25 @@ app.layout = html.Div(style={'backgroundColor': colors['background']}, children=
 
     ], className='row'),
 
-    # Таблица с данными для отображения ключевых финансовых показателей
-    dcc.Table(
-        id='financial-table',
-        columns=[{'name': col, 'id': col} for col in df.columns],
-        data=df.to_dict('records'),
-        style_table={'maxHeight': '300px', 'overflowY': 'scroll', 'backgroundColor': colors['background']}
-    ),
-
     # Второй блок: График рассеивания с выбором марки автомобиля и типа оси x
     html.Div([
         # Единственная часть блока
         html.Div([
             # Заголовок блока
             html.H4('График рассеивания:', style={'color': '#2c3e50'}),
-            # Выпадающий список для выбора марки автомобиля
-            dcc.Dropdown(
-                id='car-brand',
-                options=[{'label': brand, 'value': brand} for brand in df["Марка автомобиля"].unique()],
-                value='Toyota',
-                clearable=False,
-                style={'width': '80%', 'margin': '0 auto'}
-            ),
-            # Радиокнопки для выбора типа оси x (линейная или логарифмическая)
-            dcc.RadioItems(
-                id='crossfilter-xaxis-type',
-                options=[
-                    {'label': 'Линейная', 'value': 'Linear'},
-                    {'label': 'Логарифмическая', 'value': 'Log'}
-                ],
-                value='Linear',
-                labelStyle={'display': 'inline-block', 'marginTop': '5px'}
-            ),
-            # Выпадающий список (Dropdown) для выбора периода анализа
-            dcc.Dropdown(
-                id='analysis-period',
-                options=[
-                    {'label': 'Месяц', 'value': 'month'},
-                    {'label': 'Квартал', 'value': 'quarter'},
-                    {'label': 'Год', 'value': 'year'}
-                ],
-                value='month',
-                style={'width': '50%', 'margin': '20px auto', 'backgroundColor': colors['background']}
-            ),
-            # Индикаторы (полоски состояния) для отображения текущих значений финансовых показателей
-            dcc.Indicators(
-                id='financial-indicators',
-                style={'width': '80%', 'margin': '0 auto', 'backgroundColor': colors['background']}
-            ),
             # График рассеивания
-            dcc.Graph(
-                id='scatter-plot',
-                figure=px.scatter(df, x='Стоимость работы (руб)', y='Стоимость деталей (руб)',
-                                  color='Общая стоимость (руб)',
-                                  title='Анализ корреляции между прибылью и финансовыми параметрами')
-            ),
-        ], className='six columns'),  # Половина ширины строки
+            dcc.Graph(id='crossfilter-indicator-scatter'),
+        ], className='twelve columns'),  # Полная ширина строки
 
     ], className='row', style={'margin-top': '50px'}),
-])
+
+    # График временного ряда (линейный график) для отображения динамики доходов и расходов
+    dcc.Graph(
+        id='time-series',
+        figure=px.line(df, x='Дата', y='Общая стоимость (руб)', title='Динамика доходов и расходов')
+    ),
+
+], style={'max-width': '1200px', 'margin': '0 auto'})
 
 # Callback-функции для обновления графиков при взаимодействии с пользователем
 
@@ -186,25 +120,21 @@ def generate_chart(service_type):
     )
     return fig
 
-# Callback-функция для обновления графика рассеивания с выбором марки автомобиля и типа оси x
+# Callback-функция для обновления графика рассеивания
 @app.callback(
-    Output('scatter-plot', 'figure'),
-    Input('service-type', 'value'),
-    Input('car-brand', 'value'),
-    Input('crossfilter-xaxis-type', 'value'))
-def update_graph(service_type, car_brand, xaxis_type):
+    Output('crossfilter-indicator-scatter', 'figure'),
+    Input('service-type', 'value'))
+def update_graph(service_type):
     dff = df[df['Тип услуги'] == service_type]
 
     # Создаем график рассеивания
     fig = px.scatter(
-        dff[dff['Марка автомобиля'] == car_brand],
+        dff,
         x='Стоимость работы (руб)',
         y='Стоимость деталей (руб)',
         color='Тип работ',
         size='Общая стоимость (руб)',
-        hover_name='Номер заказа',
-        log_x=True if xaxis_type == 'Log' else False,
-        log_y=True if xaxis_type == 'Log' else False
+        hover_name='Номер заказа'
     )
 
     # Настраиваем внешний вид графика
